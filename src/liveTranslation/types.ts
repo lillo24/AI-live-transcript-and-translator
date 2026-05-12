@@ -74,3 +74,33 @@ export type LiveTranslationController = LiveTranslationState & {
   setManualPartial: (text: string) => void;
   commitManualFinal: (text: string) => void;
 };
+
+export type MicrophoneCaptureStatus =
+  | "idle"
+  | "requesting-permission"
+  | "ready"
+  | "capturing"
+  | "error";
+
+export type AudioInputDevice = {
+  deviceId: string;
+  label: string;
+  groupId?: string;
+};
+
+export type MicrophoneCaptureState = {
+  status: MicrophoneCaptureStatus;
+  devices: AudioInputDevice[];
+  selectedDeviceId: string | null;
+  stream: MediaStream | null;
+  inputLevel: number;
+  errorMessage: string | null;
+  permissionGranted: boolean;
+};
+
+export type MicrophoneCaptureController = MicrophoneCaptureState & {
+  refreshDevices: () => Promise<void>;
+  setSelectedDeviceId: (deviceId: string | null) => void;
+  startCapture: () => Promise<void>;
+  stopCapture: () => void;
+};

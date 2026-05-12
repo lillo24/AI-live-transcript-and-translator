@@ -209,8 +209,14 @@ input {
   text-transform: capitalize;
 }
 
-.control-panel {
+.sandbox-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
   margin-top: 1.5rem;
+}
+
+.control-panel {
   padding: 1.2rem;
   border-radius: 28px;
   background: rgba(9, 9, 10, 0.48);
@@ -278,6 +284,86 @@ input {
   width: 100%;
 }
 
+.audio-panel {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+}
+
+.audio-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.audio-flag,
+.audio-selected-device {
+  padding: 0.75rem 0.95rem;
+  border-radius: 16px;
+  border: 1px solid rgba(246, 239, 229, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(246, 239, 229, 0.9);
+}
+
+.audio-panel-grid,
+.audio-helper-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.audio-level-meter {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.audio-level-meter-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: rgba(246, 239, 229, 0.8);
+}
+
+.audio-level-meter-track {
+  overflow: hidden;
+  height: 0.9rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(246, 239, 229, 0.12);
+}
+
+.audio-level-meter-fill {
+  height: 100%;
+  min-width: 0.35rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5bd895, #f4ba7b, #ff7d7d);
+  transition: width 90ms linear;
+}
+
+.audio-helper-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(246, 239, 229, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.audio-helper-card span {
+  color: rgba(246, 239, 229, 0.62);
+  font-size: 0.88rem;
+}
+
+.audio-helper-card strong {
+  font-size: 1rem;
+}
+
+.audio-warning {
+  margin: 0;
+  color: #ffd092;
+}
+
 .shortcut-list {
   display: flex;
   flex-wrap: wrap;
@@ -326,7 +412,13 @@ kbd {
     grid-template-columns: 1fr;
   }
 
+  .sandbox-panels,
   .control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .audio-panel-grid,
+  .audio-helper-grid {
     grid-template-columns: 1fr;
   }
 
