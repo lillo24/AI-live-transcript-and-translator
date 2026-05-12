@@ -1,4 +1,9 @@
-export type SubtitleStatus = "idle" | "starting" | "listening" | "error";
+export type SubtitleStatus =
+  | "idle"
+  | "starting"
+  | "connecting"
+  | "listening"
+  | "error";
 
 export type SubtitleLine = {
   id: string;
@@ -9,8 +14,12 @@ export type SubtitleLine = {
 
 export type TargetLanguage = "it" | "en";
 
-// Later chapters can expand this with "openai-webrtc".
-export type LiveTranslationProviderKind = "fake";
+export type OpenAITranslationNoiseReduction =
+  | "near_field"
+  | "far_field"
+  | "disabled";
+
+export type LiveTranslationProviderKind = "fake" | "openai-webrtc";
 
 export type OverlayPosition = "bottom" | "top";
 
@@ -24,13 +33,22 @@ export type LiveTranslationConfig = {
   overlayPosition: OverlayPosition;
   overlayDensity?: OverlayDensity;
   enableKeyboardShortcuts: boolean;
+  apiBaseUrl?: string | null;
+  defaultNoiseReduction?: OpenAITranslationNoiseReduction;
+  playTranslatedAudioByDefault?: boolean;
 };
 
 export type ResolvedLiveTranslationConfig = Omit<
   LiveTranslationConfig,
-  "overlayDensity"
+  | "overlayDensity"
+  | "apiBaseUrl"
+  | "defaultNoiseReduction"
+  | "playTranslatedAudioByDefault"
 > & {
   overlayDensity: OverlayDensity;
+  apiBaseUrl: string | null;
+  defaultNoiseReduction: OpenAITranslationNoiseReduction;
+  playTranslatedAudioByDefault: boolean;
 };
 
 export type LiveTranslationState = {
@@ -40,18 +58,38 @@ export type LiveTranslationState = {
   currentPartial: string | null;
   recentFinals: SubtitleLine[];
   errorMessage: string | null;
+  connectionStatus: string | null;
+  sourceTranscript: string | null;
 };
 
 export type TranslationProviderSession = {
   stop: () => void;
 };
 
+export type LiveTranslationStartOptions = {
+  selectedDeviceId?: string | null;
+  noiseReduction?: OpenAITranslationNoiseReduction;
+  playTranslatedAudio?: boolean;
+  onConnectionStatus?: (status: string | null) => void;
+  onSourceTranscript?: (text: string | null) => void;
+  onRemoteAudioStream?: (stream: MediaStream | null) => void;
+  onEvent?: (type: string, payload?: unknown) => void;
+};
+
 export type TranslationProviderStartOptions = {
   targetLanguage: TargetLanguage;
+  selectedDeviceId?: string | null;
+  noiseReduction?: OpenAITranslationNoiseReduction;
+  playTranslatedAudio?: boolean;
+  apiBaseUrl?: string | null;
   onListening: () => void;
   onPartial: (text: string) => void;
   onFinal: (text: string) => void;
   onError: (message: string) => void;
+  onConnectionStatus?: (status: string | null) => void;
+  onSourceTranscript?: (text: string | null) => void;
+  onRemoteAudioStream?: (stream: MediaStream | null) => void;
+  onEvent?: (type: string, payload?: unknown) => void;
 };
 
 export type TranslationProviderAdapter = {
@@ -65,7 +103,7 @@ export type TranslationProviderAdapter = {
 
 export type LiveTranslationController = LiveTranslationState & {
   config: ResolvedLiveTranslationConfig;
-  start: () => Promise<void>;
+  start: (options?: LiveTranslationStartOptions) => Promise<void>;
   stop: () => void;
   toggleVisible: () => void;
   setVisible: (visible: boolean) => void;

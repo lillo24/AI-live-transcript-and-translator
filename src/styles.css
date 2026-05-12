@@ -67,7 +67,7 @@ input {
 }
 
 .app-shell {
-  width: min(1100px, calc(100vw - 2rem));
+  width: min(1380px, calc(100vw - 2.5rem));
   margin: 0 auto;
   padding: 2rem 0 7rem;
 }
@@ -78,6 +78,7 @@ input {
   gap: 1rem;
   align-items: flex-start;
   margin-bottom: 1.5rem;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -98,6 +99,7 @@ input {
   margin: 0.85rem 0 0;
   max-width: 44rem;
   color: rgba(246, 239, 229, 0.72);
+  overflow-wrap: anywhere;
 }
 
 .status-chip {
@@ -109,6 +111,10 @@ input {
   border: 1px solid rgba(246, 239, 229, 0.15);
   background: rgba(0, 0, 0, 0.18);
   white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-dot {
@@ -176,6 +182,7 @@ input {
   margin: 0;
   max-width: 42rem;
   color: rgba(246, 239, 229, 0.75);
+  overflow-wrap: anywhere;
 }
 
 .slide-note {
@@ -184,7 +191,7 @@ input {
 
 .slide-meta {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   gap: 1rem;
   margin-top: 2rem;
 }
@@ -211,16 +218,35 @@ input {
 
 .sandbox-panels {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
   gap: 1.5rem;
   margin-top: 1.5rem;
 }
 
 .control-panel {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
   padding: 1.2rem;
   border-radius: 28px;
   background: rgba(9, 9, 10, 0.48);
   border: 1px solid rgba(246, 239, 229, 0.1);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.control-panel > *,
+.panel-copy,
+.panel-copy > *,
+.field,
+.field > *,
+.control-row > *,
+.audio-status-row > *,
+.openai-result-grid > *,
+.openai-session-details > *,
+.transcript-grid > *,
+.helper-grid > * {
+  min-width: 0;
 }
 
 .panel-copy h3 {
@@ -231,12 +257,15 @@ input {
 .panel-copy p {
   margin: 0.5rem 0 0;
   color: rgba(246, 239, 229, 0.72);
+  overflow-wrap: anywhere;
 }
 
 .control-row {
   display: flex;
   gap: 0.85rem;
   align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .control-row + .control-row {
@@ -249,9 +278,8 @@ input {
 
 .control-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
   gap: 1rem;
-  margin-top: 1rem;
 }
 
 .primary-button {
@@ -270,14 +298,24 @@ input {
   font-size: 0.9rem;
 }
 
+.field select,
+.field input,
+.field textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .helper-text {
-  margin: 1rem 0 0;
+  margin: 0;
   color: rgba(246, 239, 229, 0.68);
   font-size: 0.95rem;
+  overflow-wrap: anywhere;
 }
 
 .manual-panel {
-  margin-top: 1rem;
+  margin-top: 0;
 }
 
 .text-input {
@@ -285,8 +323,6 @@ input {
 }
 
 .audio-panel {
-  display: grid;
-  align-content: start;
   gap: 1rem;
 }
 
@@ -295,6 +331,7 @@ input {
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
+  min-width: 0;
 }
 
 .audio-flag,
@@ -304,22 +341,34 @@ input {
   border: 1px solid rgba(246, 239, 229, 0.12);
   background: rgba(255, 255, 255, 0.04);
   color: rgba(246, 239, 229, 0.9);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .audio-selected-device {
-  min-width: 0;
   width: 100%;
-  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.audio-flag,
+.config-summary {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .audio-panel-grid,
-.audio-helper-grid {
+.audio-helper-grid,
+.openai-device-grid,
+.openai-result-grid,
+.openai-session-details,
+.transcript-grid,
+.helper-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
 }
 
 .audio-panel-grid {
@@ -396,23 +445,15 @@ input {
 .audio-warning {
   margin: 0;
   color: #ffd092;
+  overflow-wrap: anywhere;
 }
 
 .openai-session-panel {
-  display: grid;
-  align-content: start;
   gap: 1rem;
 }
 
 .openai-panel-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.openai-result-grid,
-.openai-session-details {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
 }
 
 .openai-result-grid > *,
@@ -435,10 +476,63 @@ input {
 }
 
 .openai-result-card strong {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: rgba(246, 239, 229, 0.94);
+}
+
+.openai-realtime-panel {
+  gap: 1rem;
+}
+
+.warning-message {
+  margin: 0;
+  color: #ffd092;
+  overflow-wrap: anywhere;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: rgba(246, 239, 229, 0.9);
+}
+
+.checkbox-row input {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  accent-color: #f4ba7b;
+}
+
+.translated-audio-player {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.transcript-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(246, 239, 229, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.transcript-card span {
+  color: rgba(246, 239, 229, 0.62);
+  font-size: 0.88rem;
+}
+
+.transcript-card p {
+  margin: 0;
+  color: rgba(246, 239, 229, 0.92);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .shortcut-list {
@@ -463,8 +557,9 @@ kbd {
 }
 
 .error-message {
-  margin: 1rem 0 0;
+  margin: 0;
   color: #ff9999;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 760px) {
@@ -496,13 +591,12 @@ kbd {
 
   .audio-panel-grid,
   .audio-helper-grid,
+  .openai-device-grid,
   .openai-panel-grid,
   .openai-result-grid,
-  .openai-session-details {
+  .openai-session-details,
+  .transcript-grid,
+  .helper-grid {
     grid-template-columns: 1fr;
-  }
-
-  .control-row {
-    flex-wrap: wrap;
   }
 }

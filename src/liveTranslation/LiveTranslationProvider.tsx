@@ -5,13 +5,16 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
+import { openAIRealtimeTranslationProvider } from "./providers/OpenAIRealtimeTranslationProvider";
 import { fakeTranslationProvider } from "./providers/FakeTranslationProvider";
 import { useLiveTranslationShortcuts } from "./useLiveTranslationShortcuts";
 import type {
+  LiveTranslationStartOptions,
   LiveTranslationConfig,
   LiveTranslationController,
   LiveTranslationProviderKind,
   LiveTranslationState,
+  OpenAITranslationNoiseReduction,
   ResolvedLiveTranslationConfig,
   SubtitleLine,
   TargetLanguage,
@@ -27,6 +30,9 @@ const defaultConfig: ResolvedLiveTranslationConfig = {
   overlayPosition: "bottom",
   overlayDensity: "comfortable",
   enableKeyboardShortcuts: true,
+  apiBaseUrl: null,
+  defaultNoiseReduction: "near_field",
+  playTranslatedAudioByDefault: false,
 };
 
 export const LiveTranslationContext =
@@ -44,6 +50,11 @@ function resolveConfig(
     ...defaultConfig,
     ...config,
     overlayDensity: config?.overlayDensity ?? defaultConfig.overlayDensity,
+    defaultNoiseReduction:
+      config?.defaultNoiseReduction ?? defaultConfig.defaultNoiseReduction,
+    playTranslatedAudioByDefault:
+      config?.playTranslatedAudioByDefault ??
+      defaultConfig.playTranslatedAudioByDefault,
   };
 }
 
@@ -57,6 +68,8 @@ function createDefaultState(
     currentPartial: null,
     recentFinals: [],
     errorMessage: null,
+    connectionStatus: null,
+    sourceTranscript: null,
   };
 }
 
@@ -71,8 +84,21 @@ function resolveProviderAdapter(
   switch (kind) {
     case "fake":
       return fakeTranslationProvider;
+    case "openai-webrtc":
+      return openAIRealtimeTranslationProvider;
   }
 }
+
+type ResolvedStartOptions = {
+  selectedDeviceId: string | null;
+  noiseReduction: OpenAITranslationNoiseReduction;
+  playTranslatedAudio: boolean;
+  apiBaseUrl: string | null;
+  onConnectionStatus?: (status: string | null) => void;
+  onSourceTranscript?: (text: string | null) => void;
+  onRemoteAudioStream?: (stream: MediaStream | null) => void;
+  onEvent?: (type: string, payload?: unknown) => void;
+};
 
 function createSubtitleLine(text: string): SubtitleLine {
   return {
@@ -98,6 +124,7 @@ export function LiveTranslationProvider({
   const sessionRef = useRef<TranslationProviderSession | null>(null);
   const runIdRef = useRef(0);
   const configRef = useRef(resolvedConfig);
+  const startOptionsRef = useRef<ResolvedStartOptions | null>(null);
 
   configRef.current = resolvedConfig;
 
@@ -116,6 +143,7 @@ export function LiveTranslationProvider({
     return () => {
       mountedRef.current = false;
       runIdRef.current += 1;
+      clearExternalSessionState();
       sessionRef.current?.stop();
       sessionRef.current = null;
     };
@@ -132,11 +160,40 @@ export function LiveTranslationProvider({
     }));
   }, [resolvedConfig.maxRecentFinals]);
 
-  async function start() {
+  function resolveStartOptions(
+    options?: LiveTranslationStartOptions,
+  ): ResolvedStartOptions {
+    return {
+      selectedDeviceId: options?.selectedDeviceId ?? null,
+      noiseReduction:
+        options?.noiseReduction ?? configRef.current.defaultNoiseReduction,
+      playTranslatedAudio:
+        options?.playTranslatedAudio ??
+        configRef.current.playTranslatedAudioByDefault,
+      apiBaseUrl: configRef.current.apiBaseUrl,
+      onConnectionStatus: options?.onConnectionStatus,
+      onSourceTranscript: options?.onSourceTranscript,
+      onRemoteAudioStream: options?.onRemoteAudioStream,
+      onEvent: options?.onEvent,
+    };
+  }
+
+  function clearExternalSessionState() {
+    const activeStartOptions = startOptionsRef.current;
+
+    activeStartOptions?.onConnectionStatus?.(null);
+    activeStartOptions?.onSourceTranscript?.(null);
+    activeStartOptions?.onRemoteAudioStream?.(null);
+
+    startOptionsRef.current = null;
+  }
+
+  async function start(options?: LiveTranslationStartOptions) {
     const currentState = stateRef.current;
 
     if (
       currentState.status === "starting" ||
+      currentState.status === "connecting" ||
       currentState.status === "listening"
     ) {
       return;
@@ -145,14 +202,19 @@ export function LiveTranslationProvider({
     runIdRef.current += 1;
     const runId = runIdRef.current;
 
+    clearExternalSessionState();
     sessionRef.current?.stop();
     sessionRef.current = null;
+    const resolvedStartOptions = resolveStartOptions(options);
+    startOptionsRef.current = resolvedStartOptions;
 
     updateState((nextState) => ({
       ...nextState,
       status: "starting",
       currentPartial: null,
       errorMessage: null,
+      connectionStatus: null,
+      sourceTranscript: null,
     }));
 
     try {
@@ -162,6 +224,10 @@ export function LiveTranslationProvider({
       );
       const nextSession = await activeProvider.start({
         targetLanguage: stateRef.current.targetLanguage,
+        selectedDeviceId: resolvedStartOptions.selectedDeviceId,
+        noiseReduction: resolvedStartOptions.noiseReduction,
+        playTranslatedAudio: resolvedStartOptions.playTranslatedAudio,
+        apiBaseUrl: resolvedStartOptions.apiBaseUrl,
         onListening: () => {
           if (!mountedRef.current || runId !== runIdRef.current) {
             return;
@@ -172,6 +238,50 @@ export function LiveTranslationProvider({
             status: "listening",
             errorMessage: null,
           }));
+        },
+        onConnectionStatus: (status) => {
+          if (!mountedRef.current || runId !== runIdRef.current) {
+            return;
+          }
+
+          resolvedStartOptions.onConnectionStatus?.(status);
+
+          updateState((nextState) => ({
+            ...nextState,
+            status:
+              nextState.status === "starting" &&
+              status &&
+              status.toLowerCase() !== "connected"
+                ? "connecting"
+                : nextState.status,
+            connectionStatus: status,
+          }));
+        },
+        onSourceTranscript: (text) => {
+          if (!mountedRef.current || runId !== runIdRef.current) {
+            return;
+          }
+
+          resolvedStartOptions.onSourceTranscript?.(text);
+
+          updateState((nextState) => ({
+            ...nextState,
+            sourceTranscript: text,
+          }));
+        },
+        onRemoteAudioStream: (stream) => {
+          if (!mountedRef.current || runId !== runIdRef.current) {
+            return;
+          }
+
+          resolvedStartOptions.onRemoteAudioStream?.(stream);
+        },
+        onEvent: (type, payload) => {
+          if (!mountedRef.current || runId !== runIdRef.current) {
+            return;
+          }
+
+          resolvedStartOptions.onEvent?.(type, payload);
         },
         onPartial: (text) => {
           if (!mountedRef.current || runId !== runIdRef.current) {
@@ -205,6 +315,7 @@ export function LiveTranslationProvider({
             return;
           }
 
+          clearExternalSessionState();
           sessionRef.current?.stop();
           sessionRef.current = null;
 
@@ -213,6 +324,7 @@ export function LiveTranslationProvider({
             status: "error",
             currentPartial: null,
             errorMessage: message,
+            connectionStatus: null,
           }));
         },
       });
@@ -239,12 +351,14 @@ export function LiveTranslationProvider({
           error instanceof Error
             ? error.message
             : "Unable to start live translation.",
+        connectionStatus: null,
       }));
     }
   }
 
   function stop() {
     runIdRef.current += 1;
+    clearExternalSessionState();
     sessionRef.current?.stop();
     sessionRef.current = null;
 
@@ -257,6 +371,8 @@ export function LiveTranslationProvider({
       status: "idle",
       currentPartial: null,
       errorMessage: null,
+      connectionStatus: null,
+      sourceTranscript: null,
     }));
   }
 

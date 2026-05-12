@@ -6,7 +6,9 @@ export { useMicrophoneCapture } from "./audio/useMicrophoneCapture";
 export { AudioInputPanel } from "./audio/AudioInputPanel";
 export { AudioLevelMeter } from "./audio/AudioLevelMeter";
 export * from "./audio/audioDevices";
+export { openAIRealtimeTranslationProvider } from "./providers/OpenAIRealtimeTranslationProvider";
 export { OpenAITranslationSessionPanel } from "./openai/OpenAITranslationSessionPanel";
+export { OpenAIRealtimeTranslationPanel } from "./openai/OpenAIRealtimeTranslationPanel";
 export {
   getLiveTranslationBackendHealth,
   createOpenAITranslationClientSecret,

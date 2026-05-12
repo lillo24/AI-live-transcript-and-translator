@@ -1,10 +1,13 @@
 import { useEffect, useEffectEvent } from "react";
-import type { SubtitleStatus } from "./types";
+import type {
+  LiveTranslationStartOptions,
+  SubtitleStatus,
+} from "./types";
 
 type LiveTranslationShortcutOptions = {
   enabled: boolean;
   status: SubtitleStatus;
-  start: () => Promise<void>;
+  start: (options?: LiveTranslationStartOptions) => Promise<void>;
   stop: () => void;
   toggleVisible: () => void;
 };

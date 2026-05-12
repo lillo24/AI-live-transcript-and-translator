@@ -1,0 +1,38 @@
+# Chapter 05 Notes
+
+- Chapter 05 adds the first real OpenAI WebRTC translation provider alongside the existing fake subtitle provider, microphone sandbox, and backend smoke test.
+- Run the local backend and frontend in two terminals:
+  - `OPENAI_API_KEY=...` then `npm run dev:server`
+  - `npm run dev`
+  - open `http://localhost:5173`
+- The realtime translation path now works as:
+  - selected microphone
+  - browser `getUserMedia()`
+  - `RTCPeerConnection`
+  - local backend client-secret request
+  - SDP offer to `/v1/realtime/translations/calls`
+  - translated audio track plus `oai-events`
+  - translated subtitle overlay
+- The realtime panel includes its own microphone selector so it does not depend on the Chapter 03 microphone sandbox. This keeps the sandbox meter and the real provider on separate capture lifecycles.
+- The expected event flow is:
+  - `session.output_transcript.delta` appends translated subtitle text and updates the overlay partial
+  - `session.input_transcript.delta` updates the source transcript preview
+  - transcript completion events that contain `output_transcript` plus `done`, `completed`, or `final` commit a final subtitle line
+  - error-like event types surface a readable error and stop the session
+- Translated audio playback is optional and off by default because the overlay demo is easier to test without echo or feedback loops. The remote audio track is still attached when available, and the panel can unmute/play it explicitly.
+- The main demo layout is wider now and card internals wrap more aggressively, so long device names, status text, event names, and transcript content stay inside their cards instead of forcing horizontal overflow.
+- To test realtime translation locally:
+  - refresh backend health in the realtime panel
+  - choose a microphone
+  - choose Italian or English
+  - choose a noise reduction mode
+  - start realtime translation
+  - allow microphone permission
+  - speak and watch the top-positioned realtime overlay plus transcript cards
+- Known limitations remain:
+  - no reconnect or resume flow
+  - no transcript persistence
+  - no production authentication or rate limiting around the local backend
+  - no glossary, prompt customization, or advanced session tuning
+  - only Italian and English are exposed in the demo UI
+  - realtime usage may cost money while running

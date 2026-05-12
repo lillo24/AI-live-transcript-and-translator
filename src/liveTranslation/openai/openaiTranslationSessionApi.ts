@@ -1,11 +1,12 @@
+import type {
+  OpenAITranslationNoiseReduction,
+  TargetLanguage,
+} from "../types";
+
 const DEFAULT_API_BASE = "http://localhost:8787";
 
-export type OpenAITranslationTargetLanguage = "it" | "en";
-
-export type OpenAITranslationNoiseReduction =
-  | "near_field"
-  | "far_field"
-  | "disabled";
+export type OpenAITranslationTargetLanguage = TargetLanguage;
+export type { OpenAITranslationNoiseReduction };
 
 export type LiveTranslationBackendHealth = {
   ok: boolean;
@@ -54,9 +55,10 @@ async function readJsonResponse<T>(response: Response): Promise<T> {
 
 async function requestBackend<T>(
   path: string,
+  apiBaseOverride?: string | null,
   init?: RequestInit,
 ): Promise<T> {
-  const apiBase = getApiBase();
+  const apiBase = apiBaseOverride || getApiBase();
   let response: Response;
 
   try {
@@ -85,14 +87,19 @@ async function requestBackend<T>(
 export async function getLiveTranslationBackendHealth(): Promise<LiveTranslationBackendHealth> {
   return requestBackend<LiveTranslationBackendHealth>(
     "/api/live-translation/health",
+    undefined,
   );
 }
 
 export async function createOpenAITranslationClientSecret(
   request: CreateOpenAITranslationSessionRequest,
+  options?: {
+    apiBaseUrl?: string | null;
+  },
 ): Promise<CreateOpenAITranslationSessionResponse> {
   return requestBackend<CreateOpenAITranslationSessionResponse>(
     "/api/live-translation/session",
+    options?.apiBaseUrl,
     {
       method: "POST",
       headers: {
