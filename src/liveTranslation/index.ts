@@ -1,4 +1,6 @@
 export * from "./types";
+export * from "./languages";
+export { LanguageSelector } from "./LanguageSelector";
 export { LiveTranslationProvider } from "./LiveTranslationProvider";
 export { LiveSubtitleOverlay } from "./LiveSubtitleOverlay";
 export { useLiveTranslation } from "./useLiveTranslation";

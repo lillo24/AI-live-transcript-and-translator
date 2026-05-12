@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   AudioInputPanel,
+  getTranslationLanguageLabel,
+  LanguageSelector,
   LiveSubtitleOverlay,
   LiveTranslationProvider,
   OpenAIRealtimeTranslationPanel,
@@ -30,7 +32,9 @@ type FakeSandboxProps = {
 function getSampleManualSubtitle(language: TargetLanguage) {
   return language === "it"
     ? "Questo e un sottotitolo manuale di prova per il plugin."
-    : "This is a manual subtitle test line for the plugin.";
+    : `This is a manual subtitle test line for ${getTranslationLanguageLabel(
+        language,
+      )}.`;
 }
 
 function FakeSubtitleSandbox({
@@ -72,9 +76,7 @@ function FakeSubtitleSandbox({
             </div>
             <div>
               <span>Target language</span>
-              <strong>
-                {translation.targetLanguage === "en" ? "English" : "Italian"}
-              </strong>
+              <strong>{getTranslationLanguageLabel(translation.targetLanguage)}</strong>
             </div>
             <div>
               <span>Overlay position</span>
@@ -127,20 +129,11 @@ function FakeSubtitleSandbox({
           </div>
 
           <div className="control-grid">
-            <label className="field">
-              <span>Target language</span>
-              <select
-                value={translation.targetLanguage}
-                onChange={(event) =>
-                  translation.setTargetLanguage(
-                    event.target.value as TargetLanguage,
-                  )
-                }
-              >
-                <option value="en">English</option>
-                <option value="it">Italian</option>
-              </select>
-            </label>
+            <LanguageSelector
+              value={translation.targetLanguage}
+              onChange={translation.setTargetLanguage}
+              label="Translate into"
+            />
 
             <label className="field">
               <span>Overlay position</span>
@@ -273,14 +266,16 @@ export default function App() {
     <main className="app-shell">
       <section className="demo-header">
         <div>
-          <p className="eyebrow">Chapter 05 Demo</p>
-          <h1>Fake subtitles, mic sandbox, backend smoke test, and real WebRTC translation</h1>
+          <p className="eyebrow">Chapter 06 Demo</p>
+          <h1>Fake subtitles, mic sandbox, backend smoke test, realtime translation, and shared language selection</h1>
           <p className="supporting-text">
             This demo now carries two detached translation paths at once: the
             original fake subtitle provider for safe overlay testing, and a new
             OpenAI WebRTC provider that can request a short-lived client secret,
             negotiate a realtime translation call, and push translated text into
-            the existing overlay.
+            the existing overlay. Chapter 06 adds one reusable output-language
+            selector so the chosen language stays consistent from UI to backend
+            session creation.
           </p>
         </div>
       </section>

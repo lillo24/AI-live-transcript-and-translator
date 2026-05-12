@@ -1,3 +1,5 @@
+import type { TranslationLanguageCode } from "./languages";
+
 export type SubtitleStatus =
   | "idle"
   | "starting"
@@ -12,7 +14,7 @@ export type SubtitleLine = {
   createdAt: number;
 };
 
-export type TargetLanguage = "it" | "en";
+export type TargetLanguage = TranslationLanguageCode;
 
 export type OpenAITranslationNoiseReduction =
   | "near_field"

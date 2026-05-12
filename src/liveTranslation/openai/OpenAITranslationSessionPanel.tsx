@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
 import {
+  DEFAULT_TRANSLATION_LANGUAGE_CODE,
+  getTranslationLanguageLabel,
+} from "../languages";
+import { LanguageSelector } from "../LanguageSelector";
+import {
   createOpenAITranslationClientSecret,
   getLiveTranslationBackendHealth,
   type CreateOpenAITranslationSessionResponse,
@@ -42,7 +47,7 @@ function formatExpiration(expiresAt: number | null) {
 export function OpenAITranslationSessionPanel() {
   const [status, setStatus] = useState<OpenAISessionPanelStatus>("idle");
   const [targetLanguage, setTargetLanguage] =
-    useState<OpenAITranslationTargetLanguage>("it");
+    useState<OpenAITranslationTargetLanguage>(DEFAULT_TRANSLATION_LANGUAGE_CODE);
   const [noiseReduction, setNoiseReduction] =
     useState<OpenAITranslationNoiseReduction>("near_field");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -115,21 +120,12 @@ export function OpenAITranslationSessionPanel() {
       </div>
 
       <div className="control-grid openai-panel-grid">
-        <label className="field">
-          <span>Target language</span>
-          <select
-            value={targetLanguage}
-            onChange={(event) =>
-              setTargetLanguage(
-                event.target.value as OpenAITranslationTargetLanguage,
-              )
-            }
-            disabled={status === "creating-session"}
-          >
-            <option value="it">Italian</option>
-            <option value="en">English</option>
-          </select>
-        </label>
+        <LanguageSelector
+          value={targetLanguage}
+          onChange={setTargetLanguage}
+          label="Translate into"
+          disabled={status === "creating-session"}
+        />
 
         <label className="field">
           <span>Noise reduction</span>
@@ -196,7 +192,9 @@ export function OpenAITranslationSessionPanel() {
           </div>
           <div className="openai-result-card">
             <span>Output language</span>
-            <strong>{session.session.outputLanguage}</strong>
+            <strong>
+              {getTranslationLanguageLabel(session.session.outputLanguage)}
+            </strong>
           </div>
           <div className="openai-result-card">
             <span>Expires at</span>

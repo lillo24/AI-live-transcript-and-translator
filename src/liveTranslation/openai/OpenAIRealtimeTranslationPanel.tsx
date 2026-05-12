@@ -3,6 +3,10 @@ import {
   getMicrophoneSupportError,
   listAudioInputDevices,
 } from "../audio/audioDevices";
+import {
+  getTranslationLanguageLabel,
+} from "../languages";
+import { LanguageSelector } from "../LanguageSelector";
 import { useLiveTranslation } from "../useLiveTranslation";
 import {
   getLiveTranslationBackendHealth,
@@ -12,7 +16,6 @@ import type {
   AudioInputDevice,
   OpenAITranslationNoiseReduction,
   SubtitleStatus,
-  TargetLanguage,
 } from "../types";
 
 type HealthStatus = "idle" | "checking" | "ready" | "error";
@@ -224,19 +227,13 @@ export function OpenAIRealtimeTranslationPanel() {
       </div>
 
       <div className="control-grid openai-panel-grid">
-        <label className="field">
-          <span>Target language</span>
-          <select
-            value={translation.targetLanguage}
-            onChange={(event) =>
-              translation.setTargetLanguage(event.target.value as TargetLanguage)
-            }
-            disabled={isRunning}
-          >
-            <option value="it">Italian</option>
-            <option value="en">English</option>
-          </select>
-        </label>
+        <LanguageSelector
+          value={translation.targetLanguage}
+          onChange={translation.setTargetLanguage}
+          label="Translate into"
+          disabled={isRunning}
+          compact
+        />
 
         <label className="field">
           <span>Noise reduction</span>
@@ -332,6 +329,10 @@ export function OpenAIRealtimeTranslationPanel() {
         <div className="openai-result-card">
           <span>Connection phase</span>
           <strong>{connectionPhase ?? translation.connectionStatus ?? "Idle"}</strong>
+        </div>
+        <div className="openai-result-card">
+          <span>Output language</span>
+          <strong>{getTranslationLanguageLabel(translation.targetLanguage)}</strong>
         </div>
         <div className="openai-result-card">
           <span>Last event type</span>

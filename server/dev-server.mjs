@@ -8,7 +8,23 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 const OPENAI_TRANSLATION_CLIENT_SECRETS_URL =
   "https://api.openai.com/v1/realtime/translations/client_secrets";
-const VALID_TARGET_LANGUAGES = new Set(["it", "en"]);
+const DEFAULT_TARGET_LANGUAGE = "it";
+const DEFAULT_NOISE_REDUCTION = "near_field";
+const SUPPORTED_TRANSLATION_LANGUAGE_CODES = new Set([
+  "en",
+  "it",
+  "es",
+  "fr",
+  "de",
+  "pt",
+  "ja",
+  "zh",
+  "ko",
+  "hi",
+  "id",
+  "vi",
+  "ru",
+]);
 const VALID_NOISE_REDUCTION_VALUES = new Set([
   "near_field",
   "far_field",
@@ -61,17 +77,40 @@ function readRequestBody(request) {
   });
 }
 
-function normalizeTargetLanguage(value) {
-  if (typeof value !== "string" || !VALID_TARGET_LANGUAGES.has(value)) {
-    return "it";
+function resolveTargetLanguage(value) {
+  if (value === undefined || value === null || value === "") {
+    return DEFAULT_TARGET_LANGUAGE;
+  }
+
+  if (
+    typeof value !== "string" ||
+    !SUPPORTED_TRANSLATION_LANGUAGE_CODES.has(value)
+  ) {
+    throw new Error(
+      `Unsupported target language code "${String(
+        value,
+      )}". Supported codes: ${Array.from(
+        SUPPORTED_TRANSLATION_LANGUAGE_CODES,
+      ).join(", ")}.`,
+    );
   }
 
   return value;
 }
 
-function normalizeNoiseReduction(value) {
+function resolveNoiseReduction(value) {
+  if (value === undefined || value === null || value === "") {
+    return DEFAULT_NOISE_REDUCTION;
+  }
+
   if (typeof value !== "string" || !VALID_NOISE_REDUCTION_VALUES.has(value)) {
-    return "near_field";
+    throw new Error(
+      `Unsupported noiseReduction value "${String(
+        value,
+      )}". Supported values: ${Array.from(
+        VALID_NOISE_REDUCTION_VALUES,
+      ).join(", ")}.`,
+    );
   }
 
   return value;
@@ -204,8 +243,8 @@ const server = createServer(async (request, response) => {
   ) {
     try {
       const body = await readRequestBody(request);
-      const targetLanguage = normalizeTargetLanguage(body?.targetLanguage);
-      const noiseReduction = normalizeNoiseReduction(body?.noiseReduction);
+      const targetLanguage = resolveTargetLanguage(body?.targetLanguage);
+      const noiseReduction = resolveNoiseReduction(body?.noiseReduction);
       const sessionResult = await createTranslationClientSecret({
         targetLanguage,
         noiseReduction,

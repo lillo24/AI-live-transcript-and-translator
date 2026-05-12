@@ -1,4 +1,6 @@
+import { getTranslationLanguageLabel } from "../languages";
 import type {
+  TargetLanguage,
   TranslationProviderAdapter,
   TranslationProviderStartOptions,
 } from "../types";
@@ -62,6 +64,29 @@ const italianScript: FakeSubtitleScript[] = [
   },
 ];
 
+function buildFallbackScript(targetLanguage: TargetLanguage): FakeSubtitleScript[] {
+  const languageLabel = getTranslationLanguageLabel(targetLanguage);
+
+  return [
+    {
+      partials: [
+        "This fake stream...",
+        `This fake stream targets ${languageLabel}...`,
+        `This fake stream targets ${languageLabel} without a real backend...`,
+      ],
+      final: `This fake stream targets ${languageLabel} without using a real translation session.`,
+    },
+    {
+      partials: [
+        "The shared selector...",
+        "The shared selector now reaches every panel...",
+        `The shared selector now reaches every panel and keeps ${languageLabel} selected...`,
+      ],
+      final: `The shared selector now reaches every panel and keeps ${languageLabel} selected end to end.`,
+    },
+  ];
+}
+
 function scheduleTimeout(
   timeouts: Set<number>,
   callback: () => void,
@@ -120,7 +145,11 @@ export const fakeTranslationProvider: TranslationProviderAdapter = {
     let cancelled = false;
     const timeouts = new Set<number>();
     const script =
-      options.targetLanguage === "it" ? italianScript : englishScript;
+      options.targetLanguage === "it"
+        ? italianScript
+        : options.targetLanguage === "en"
+          ? englishScript
+          : buildFallbackScript(options.targetLanguage);
 
     try {
       options.onListening();

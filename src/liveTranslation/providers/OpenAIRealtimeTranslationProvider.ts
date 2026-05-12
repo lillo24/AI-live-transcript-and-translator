@@ -7,6 +7,7 @@ import type {
 
 const OPENAI_TRANSLATION_CALLS_URL =
   "https://api.openai.com/v1/realtime/translations/calls";
+const DEFAULT_NOISE_REDUCTION: OpenAITranslationNoiseReduction = "near_field";
 
 type TranscriptBuffers = {
   output: string;
@@ -382,7 +383,8 @@ export const openAIRealtimeTranslationProvider: TranslationProviderAdapter = {
       const session = await createOpenAITranslationClientSecret(
         {
           targetLanguage: options.targetLanguage,
-          noiseReduction: options.noiseReduction,
+          noiseReduction:
+            options.noiseReduction ?? DEFAULT_NOISE_REDUCTION,
         },
         {
           apiBaseUrl: options.apiBaseUrl,

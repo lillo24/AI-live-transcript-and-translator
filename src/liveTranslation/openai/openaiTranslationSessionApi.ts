@@ -1,11 +1,11 @@
 import type {
   OpenAITranslationNoiseReduction,
-  TargetLanguage,
 } from "../types";
+import type { TranslationLanguageCode } from "../languages";
 
 const DEFAULT_API_BASE = "http://localhost:8787";
 
-export type OpenAITranslationTargetLanguage = TargetLanguage;
+export type OpenAITranslationTargetLanguage = TranslationLanguageCode;
 export type { OpenAITranslationNoiseReduction };
 
 export type LiveTranslationBackendHealth = {
@@ -15,8 +15,8 @@ export type LiveTranslationBackendHealth = {
 };
 
 export type CreateOpenAITranslationSessionRequest = {
-  targetLanguage?: OpenAITranslationTargetLanguage;
-  noiseReduction?: OpenAITranslationNoiseReduction;
+  targetLanguage: OpenAITranslationTargetLanguage;
+  noiseReduction: OpenAITranslationNoiseReduction;
 };
 
 export type CreateOpenAITranslationSessionResponse = {
