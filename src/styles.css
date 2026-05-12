@@ -53,7 +53,8 @@ button:disabled {
   cursor: not-allowed;
 }
 
-select {
+select,
+input {
   border: 1px solid rgba(246, 239, 229, 0.18);
   border-radius: 14px;
   background: rgba(12, 12, 14, 0.65);
@@ -177,6 +178,10 @@ select {
   color: rgba(246, 239, 229, 0.75);
 }
 
+.slide-note {
+  margin-top: 1rem;
+}
+
 .slide-meta {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -201,6 +206,7 @@ select {
   display: block;
   margin-top: 0.2rem;
   font-size: 1.1rem;
+  text-transform: capitalize;
 }
 
 .control-panel {
@@ -209,6 +215,16 @@ select {
   border-radius: 28px;
   background: rgba(9, 9, 10, 0.48);
   border: 1px solid rgba(246, 239, 229, 0.1);
+}
+
+.panel-copy h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.panel-copy p {
+  margin: 0.5rem 0 0;
+  color: rgba(246, 239, 229, 0.72);
 }
 
 .control-row {
@@ -223,6 +239,13 @@ select {
 
 .control-row-wrap {
   flex-wrap: wrap;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .primary-button {
@@ -241,6 +264,20 @@ select {
   font-size: 0.9rem;
 }
 
+.helper-text {
+  margin: 1rem 0 0;
+  color: rgba(246, 239, 229, 0.68);
+  font-size: 0.95rem;
+}
+
+.manual-panel {
+  margin-top: 1rem;
+}
+
+.text-input {
+  width: 100%;
+}
+
 .shortcut-list {
   display: flex;
   flex-wrap: wrap;
@@ -255,6 +292,11 @@ kbd {
   background: rgba(255, 255, 255, 0.06);
   padding: 0.2rem 0.45rem;
   font-size: 0.88rem;
+}
+
+.config-summary {
+  color: rgba(246, 239, 229, 0.9);
+  text-transform: capitalize;
 }
 
 .error-message {
@@ -284,8 +326,11 @@ kbd {
     grid-template-columns: 1fr;
   }
 
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
+
   .control-row {
     flex-wrap: wrap;
   }
 }
-

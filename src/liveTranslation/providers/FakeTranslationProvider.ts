@@ -1,6 +1,6 @@
 import type {
   TranslationProviderAdapter,
-  TranslationStartOptions,
+  TranslationProviderStartOptions,
 } from "../types";
 
 type FakeSubtitleScript = {
@@ -46,11 +46,11 @@ const italianScript: FakeSubtitleScript[] = [
   },
   {
     partials: [
-      "Più avanti...",
-      "Più avanti questo arriverà...",
-      "Più avanti questo arriverà da OpenAI...",
+      "Piu avanti...",
+      "Piu avanti questo arrivera...",
+      "Piu avanti questo arrivera da OpenAI...",
     ],
-    final: "Più avanti questo arriverà dalla traduzione realtime di OpenAI.",
+    final: "Piu avanti questo arrivera dalla traduzione realtime di OpenAI.",
   },
   {
     partials: [
@@ -77,7 +77,7 @@ function scheduleTimeout(
 
 function runFakeStream(
   script: FakeSubtitleScript[],
-  options: TranslationStartOptions,
+  options: TranslationProviderStartOptions,
   timeouts: Set<number>,
   index: number,
   isCancelled: () => boolean,
@@ -115,6 +115,7 @@ function runFakeStream(
 }
 
 export const fakeTranslationProvider: TranslationProviderAdapter = {
+  kind: "fake",
   start(options) {
     let cancelled = false;
     const timeouts = new Set<number>();
@@ -148,4 +149,3 @@ export const fakeTranslationProvider: TranslationProviderAdapter = {
     };
   },
 };
-

@@ -1,8 +1,11 @@
-import { useEffect, useEffectEvent } from "react";
+import { useState } from "react";
 import {
   LiveSubtitleOverlay,
   LiveTranslationProvider,
   useLiveTranslation,
+  type OverlayDensity,
+  type OverlayPosition,
+  type TargetLanguage,
 } from "./liveTranslation";
 
 const statusLabels = {
@@ -12,73 +15,45 @@ const statusLabels = {
   error: "Error",
 } as const;
 
-function DemoScreen() {
+type DemoScreenProps = {
+  overlayDensity: OverlayDensity;
+  overlayPosition: OverlayPosition;
+  onOverlayDensityChange: (density: OverlayDensity) => void;
+  onOverlayPositionChange: (position: OverlayPosition) => void;
+};
+
+function getSampleManualSubtitle(language: TargetLanguage) {
+  return language === "it"
+    ? "Questo e un sottotitolo manuale di prova per il plugin."
+    : "This is a manual subtitle test line for the plugin.";
+}
+
+function DemoScreen({
+  overlayDensity,
+  overlayPosition,
+  onOverlayDensityChange,
+  onOverlayPositionChange,
+}: DemoScreenProps) {
   const translation = useLiveTranslation();
-
-  const handleShortcut = useEffectEvent((event: KeyboardEvent) => {
-    const target = event.target;
-    const isEditable =
-      target instanceof HTMLElement &&
-      (target.isContentEditable ||
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.tagName === "SELECT");
-
-    if (isEditable) {
-      return;
-    }
-
-    if (event.key === "Escape") {
-      translation.stop();
-      return;
-    }
-
-    if (event.key.toLowerCase() === "s") {
-      event.preventDefault();
-      translation.toggleVisible();
-      return;
-    }
-
-    if (event.key.toLowerCase() === "m") {
-      event.preventDefault();
-
-      if (
-        translation.status === "starting" ||
-        translation.status === "listening"
-      ) {
-        translation.stop();
-        return;
-      }
-
-      void translation.start();
-    }
-  });
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      handleShortcut(event);
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [handleShortcut]);
+  const [manualText, setManualText] = useState("");
 
   const isRunning =
     translation.status === "starting" || translation.status === "listening";
+  const trimmedManualText = manualText.trim();
+  const sampleManualSubtitle = getSampleManualSubtitle(
+    translation.targetLanguage,
+  );
 
   return (
     <>
       <main className="app-shell">
         <section className="demo-header">
           <div>
-            <p className="eyebrow">Chapter 01 Demo</p>
-            <h1>Live Translation Subtitle Overlay</h1>
+            <p className="eyebrow">Chapter 02 Demo</p>
+            <h1>Presentation Subtitle Plugin Skeleton</h1>
             <p className="supporting-text">
-              Fake subtitles simulate the realtime UI flow before adding a
-              microphone or OpenAI provider.
+              This repo currently uses a fake provider. OpenAI/WebRTC is
+              intentionally not implemented yet.
             </p>
           </div>
 
@@ -96,6 +71,10 @@ function DemoScreen() {
               This view stands in for the thesis presentation app that will host
               the detachable overlay later.
             </p>
+            <p className="slide-note">
+              The demo stays local-only so UI behavior can be tested without a
+              microphone, backend session, or realtime API connection.
+            </p>
             <div className="slide-meta">
               <div>
                 <span>Target language</span>
@@ -107,11 +86,31 @@ function DemoScreen() {
                 <span>Visibility</span>
                 <strong>{translation.isVisible ? "Shown" : "Hidden"}</strong>
               </div>
+              <div>
+                <span>Overlay position</span>
+                <strong>
+                  {translation.config.overlayPosition === "top"
+                    ? "Top"
+                    : "Bottom"}
+                </strong>
+              </div>
+              <div>
+                <span>Provider kind</span>
+                <strong>{translation.config.providerKind}</strong>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="control-panel" aria-label="Subtitle controls">
+          <div className="panel-copy">
+            <h3>Plugin controls</h3>
+            <p>
+              Keyboard shortcuts now live inside the plugin and ignore inputs,
+              selects, textareas, and contenteditable fields.
+            </p>
+          </div>
+
           <div className="control-row">
             <button
               className="primary-button"
@@ -132,14 +131,14 @@ function DemoScreen() {
             </button>
           </div>
 
-          <div className="control-row control-row-wrap">
+          <div className="control-grid">
             <label className="field">
               <span>Target language</span>
               <select
                 value={translation.targetLanguage}
                 onChange={(event) =>
                   translation.setTargetLanguage(
-                    event.target.value as "en" | "it",
+                    event.target.value as TargetLanguage,
                   )
                 }
               >
@@ -148,12 +147,90 @@ function DemoScreen() {
               </select>
             </label>
 
+            <label className="field">
+              <span>Overlay position</span>
+              <select
+                value={overlayPosition}
+                onChange={(event) =>
+                  onOverlayPositionChange(
+                    event.target.value as OverlayPosition,
+                  )
+                }
+              >
+                <option value="bottom">Bottom</option>
+                <option value="top">Top</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Overlay density</span>
+              <select
+                value={overlayDensity}
+                onChange={(event) =>
+                  onOverlayDensityChange(
+                    event.target.value as OverlayDensity,
+                  )
+                }
+              >
+                <option value="comfortable">Comfortable</option>
+                <option value="compact">Compact</option>
+              </select>
+            </label>
+          </div>
+
+          <p className="helper-text">
+            Changing target language while listening does not restart the fake
+            stream. The new language is used on the next start.
+          </p>
+
+          <div className="field manual-panel">
+            <span>Manual subtitle test mode</span>
+            <input
+              className="text-input"
+              type="text"
+              value={manualText}
+              onChange={(event) => setManualText(event.target.value)}
+              placeholder="Type a subtitle line for manual overlay testing"
+            />
+            <div className="control-row control-row-wrap">
+              <button
+                type="button"
+                onClick={() => translation.setManualPartial(trimmedManualText)}
+                disabled={!trimmedManualText}
+              >
+                Show as partial
+              </button>
+              <button
+                type="button"
+                onClick={() => translation.commitManualFinal(trimmedManualText)}
+                disabled={!trimmedManualText}
+              >
+                Commit as final
+              </button>
+              <button
+                type="button"
+                onClick={() => setManualText(sampleManualSubtitle)}
+              >
+                Use sample subtitle
+              </button>
+            </div>
+          </div>
+
+          <div className="control-row control-row-wrap">
             <div className="field">
               <span>Keyboard shortcuts</span>
               <div className="shortcut-list">
                 <kbd>S</kbd> show or hide
                 <kbd>M</kbd> start or stop
                 <kbd>Esc</kbd> stop
+              </div>
+            </div>
+
+            <div className="field">
+              <span>Active overlay config</span>
+              <div className="config-summary">
+                {translation.config.overlayPosition} /{" "}
+                {translation.config.overlayDensity}
               </div>
             </div>
           </div>
@@ -172,10 +249,29 @@ function DemoScreen() {
 }
 
 export default function App() {
+  const [overlayPosition, setOverlayPosition] =
+    useState<OverlayPosition>("bottom");
+  const [overlayDensity, setOverlayDensity] =
+    useState<OverlayDensity>("comfortable");
+
   return (
-    <LiveTranslationProvider>
-      <DemoScreen />
+    <LiveTranslationProvider
+      config={{
+        providerKind: "fake",
+        defaultVisible: true,
+        defaultTargetLanguage: "it",
+        maxRecentFinals: 4,
+        overlayPosition,
+        overlayDensity,
+        enableKeyboardShortcuts: true,
+      }}
+    >
+      <DemoScreen
+        overlayDensity={overlayDensity}
+        overlayPosition={overlayPosition}
+        onOverlayDensityChange={setOverlayDensity}
+        onOverlayPositionChange={setOverlayPosition}
+      />
     </LiveTranslationProvider>
   );
 }
-

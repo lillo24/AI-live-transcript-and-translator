@@ -6,31 +6,73 @@ import {
   type PropsWithChildren,
 } from "react";
 import { fakeTranslationProvider } from "./providers/FakeTranslationProvider";
+import { useLiveTranslationShortcuts } from "./useLiveTranslationShortcuts";
 import type {
+  LiveTranslationConfig,
   LiveTranslationController,
+  LiveTranslationProviderKind,
   LiveTranslationState,
+  ResolvedLiveTranslationConfig,
   SubtitleLine,
   TargetLanguage,
   TranslationProviderAdapter,
-  TranslationSession,
+  TranslationProviderSession,
 } from "./types";
 
-const defaultState: LiveTranslationState = {
-  status: "idle",
-  isVisible: true,
-  targetLanguage: "en",
-  currentPartial: null,
-  recentFinals: [],
-  errorMessage: null,
+const defaultConfig: ResolvedLiveTranslationConfig = {
+  providerKind: "fake",
+  defaultVisible: true,
+  defaultTargetLanguage: "en",
+  maxRecentFinals: 4,
+  overlayPosition: "bottom",
+  overlayDensity: "comfortable",
+  enableKeyboardShortcuts: true,
 };
 
 export const LiveTranslationContext =
   createContext<LiveTranslationController | null>(null);
 
 type LiveTranslationProviderProps = PropsWithChildren<{
+  config?: Partial<LiveTranslationConfig>;
   provider?: TranslationProviderAdapter;
-  maxRecentFinals?: number;
 }>;
+
+function resolveConfig(
+  config?: Partial<LiveTranslationConfig>,
+): ResolvedLiveTranslationConfig {
+  return {
+    ...defaultConfig,
+    ...config,
+    overlayDensity: config?.overlayDensity ?? defaultConfig.overlayDensity,
+  };
+}
+
+function createDefaultState(
+  config: ResolvedLiveTranslationConfig,
+): LiveTranslationState {
+  return {
+    status: "idle",
+    isVisible: config.defaultVisible,
+    targetLanguage: config.defaultTargetLanguage,
+    currentPartial: null,
+    recentFinals: [],
+    errorMessage: null,
+  };
+}
+
+function resolveProviderAdapter(
+  kind: LiveTranslationProviderKind,
+  override?: TranslationProviderAdapter,
+) {
+  if (override) {
+    return override;
+  }
+
+  switch (kind) {
+    case "fake":
+      return fakeTranslationProvider;
+  }
+}
 
 function createSubtitleLine(text: string): SubtitleLine {
   return {
@@ -43,13 +85,30 @@ function createSubtitleLine(text: string): SubtitleLine {
 
 export function LiveTranslationProvider({
   children,
-  provider = fakeTranslationProvider,
-  maxRecentFinals = 4,
+  config,
+  provider,
 }: LiveTranslationProviderProps) {
-  const [state, setState] = useState<LiveTranslationState>(defaultState);
+  const resolvedConfig = resolveConfig(config);
+  const initialConfigRef = useRef<ResolvedLiveTranslationConfig>(resolvedConfig);
+  const [state, setState] = useState<LiveTranslationState>(() =>
+    createDefaultState(initialConfigRef.current),
+  );
+  const stateRef = useRef(state);
   const mountedRef = useRef(true);
-  const sessionRef = useRef<TranslationSession | null>(null);
+  const sessionRef = useRef<TranslationProviderSession | null>(null);
   const runIdRef = useRef(0);
+  const configRef = useRef(resolvedConfig);
+
+  configRef.current = resolvedConfig;
+
+  function updateState(
+    updater: (current: LiveTranslationState) => LiveTranslationState,
+  ) {
+    const nextState = updater(stateRef.current);
+    stateRef.current = nextState;
+    setState(nextState);
+    return nextState;
+  }
 
   useEffect(() => {
     mountedRef.current = true;
@@ -62,8 +121,24 @@ export function LiveTranslationProvider({
     };
   }, []);
 
+  useEffect(() => {
+    if (stateRef.current.recentFinals.length <= resolvedConfig.maxRecentFinals) {
+      return;
+    }
+
+    updateState((current) => ({
+      ...current,
+      recentFinals: current.recentFinals.slice(0, resolvedConfig.maxRecentFinals),
+    }));
+  }, [resolvedConfig.maxRecentFinals]);
+
   async function start() {
-    if (state.status === "starting" || state.status === "listening") {
+    const currentState = stateRef.current;
+
+    if (
+      currentState.status === "starting" ||
+      currentState.status === "listening"
+    ) {
       return;
     }
 
@@ -73,23 +148,27 @@ export function LiveTranslationProvider({
     sessionRef.current?.stop();
     sessionRef.current = null;
 
-    setState((current) => ({
-      ...current,
+    updateState((nextState) => ({
+      ...nextState,
       status: "starting",
       currentPartial: null,
       errorMessage: null,
     }));
 
     try {
-      const nextSession = await provider.start({
-        targetLanguage: state.targetLanguage,
+      const activeProvider = resolveProviderAdapter(
+        configRef.current.providerKind,
+        provider,
+      );
+      const nextSession = await activeProvider.start({
+        targetLanguage: stateRef.current.targetLanguage,
         onListening: () => {
           if (!mountedRef.current || runId !== runIdRef.current) {
             return;
           }
 
-          setState((current) => ({
-            ...current,
+          updateState((nextState) => ({
+            ...nextState,
             status: "listening",
             errorMessage: null,
           }));
@@ -99,8 +178,8 @@ export function LiveTranslationProvider({
             return;
           }
 
-          setState((current) => ({
-            ...current,
+          updateState((nextState) => ({
+            ...nextState,
             currentPartial: text,
             errorMessage: null,
           }));
@@ -110,13 +189,13 @@ export function LiveTranslationProvider({
             return;
           }
 
-          setState((current) => ({
-            ...current,
+          updateState((nextState) => ({
+            ...nextState,
             status: "listening",
             currentPartial: null,
-            recentFinals: [createSubtitleLine(text), ...current.recentFinals].slice(
+            recentFinals: [createSubtitleLine(text), ...nextState.recentFinals].slice(
               0,
-              maxRecentFinals,
+              configRef.current.maxRecentFinals,
             ),
             errorMessage: null,
           }));
@@ -129,8 +208,8 @@ export function LiveTranslationProvider({
           sessionRef.current?.stop();
           sessionRef.current = null;
 
-          setState((current) => ({
-            ...current,
+          updateState((nextState) => ({
+            ...nextState,
             status: "error",
             currentPartial: null,
             errorMessage: message,
@@ -152,8 +231,8 @@ export function LiveTranslationProvider({
       sessionRef.current?.stop();
       sessionRef.current = null;
 
-      setState((current) => ({
-        ...current,
+      updateState((nextState) => ({
+        ...nextState,
         status: "error",
         currentPartial: null,
         errorMessage:
@@ -173,8 +252,8 @@ export function LiveTranslationProvider({
       return;
     }
 
-    setState((current) => ({
-      ...current,
+    updateState((nextState) => ({
+      ...nextState,
       status: "idle",
       currentPartial: null,
       errorMessage: null,
@@ -182,43 +261,86 @@ export function LiveTranslationProvider({
   }
 
   function toggleVisible() {
-    setState((current) => ({
-      ...current,
-      isVisible: !current.isVisible,
+    updateState((nextState) => ({
+      ...nextState,
+      isVisible: !nextState.isVisible,
     }));
   }
 
   function setVisible(visible: boolean) {
-    setState((current) => ({
-      ...current,
+    updateState((nextState) => ({
+      ...nextState,
       isVisible: visible,
     }));
   }
 
   function setTargetLanguage(language: TargetLanguage) {
-    setState((current) => ({
-      ...current,
-      targetLanguage: language,
-    }));
+    updateState((nextState) =>
+      nextState.targetLanguage === language
+        ? nextState
+        : {
+            ...nextState,
+            targetLanguage: language,
+          },
+    );
   }
 
   function clearSubtitles() {
-    setState((current) => ({
-      ...current,
+    updateState((nextState) => ({
+      ...nextState,
       currentPartial: null,
       recentFinals: [],
       errorMessage: null,
     }));
   }
 
+  function setManualPartial(text: string) {
+    const nextText = text.trim();
+
+    updateState((nextState) => ({
+      ...nextState,
+      currentPartial: nextText || null,
+      errorMessage: null,
+    }));
+  }
+
+  function commitManualFinal(text: string) {
+    const nextText = text.trim();
+
+    if (!nextText) {
+      return;
+    }
+
+    updateState((nextState) => ({
+      ...nextState,
+      currentPartial: null,
+      recentFinals: [createSubtitleLine(nextText), ...nextState.recentFinals].slice(
+        0,
+        configRef.current.maxRecentFinals,
+      ),
+      errorMessage: null,
+    }));
+  }
+
+  useLiveTranslationShortcuts({
+    enabled: resolvedConfig.enableKeyboardShortcuts,
+    status: state.status,
+    start,
+    stop,
+    toggleVisible,
+  });
+
   const value: LiveTranslationController = {
     ...state,
+    config: resolvedConfig,
     start,
     stop,
     toggleVisible,
     setVisible,
     setTargetLanguage,
     clearSubtitles,
+    setManualPartial,
+    commitManualFinal,
   };
 
   return (
