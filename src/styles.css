@@ -211,7 +211,7 @@ input {
 
 .sandbox-panels {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
   gap: 1.5rem;
   margin-top: 1.5rem;
 }
@@ -306,11 +306,45 @@ input {
   color: rgba(246, 239, 229, 0.9);
 }
 
+.audio-selected-device {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .audio-panel-grid,
 .audio-helper-grid {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.audio-panel-grid {
+  align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.audio-panel-grid > *,
+.audio-helper-grid > * {
+  min-width: 0;
+}
+
+.audio-panel-grid .field,
+.audio-panel-grid .field > span {
+  min-width: 0;
+}
+
+.audio-panel-grid select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .audio-level-meter {
@@ -362,6 +396,49 @@ input {
 .audio-warning {
   margin: 0;
   color: #ffd092;
+}
+
+.openai-session-panel {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+}
+
+.openai-panel-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.openai-result-grid,
+.openai-session-details {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.openai-result-grid > *,
+.openai-session-details > * {
+  min-width: 0;
+}
+
+.openai-result-card {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(246, 239, 229, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.openai-result-card span {
+  color: rgba(246, 239, 229, 0.62);
+  font-size: 0.88rem;
+}
+
+.openai-result-card strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(246, 239, 229, 0.94);
 }
 
 .shortcut-list {
@@ -418,7 +495,10 @@ kbd {
   }
 
   .audio-panel-grid,
-  .audio-helper-grid {
+  .audio-helper-grid,
+  .openai-panel-grid,
+  .openai-result-grid,
+  .openai-session-details {
     grid-template-columns: 1fr;
   }
 

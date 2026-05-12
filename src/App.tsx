@@ -3,6 +3,7 @@ import {
   AudioInputPanel,
   LiveSubtitleOverlay,
   LiveTranslationProvider,
+  OpenAITranslationSessionPanel,
   useLiveTranslation,
   type OverlayDensity,
   type OverlayPosition,
@@ -50,12 +51,12 @@ function DemoScreen({
       <main className="app-shell">
         <section className="demo-header">
           <div>
-            <p className="eyebrow">Chapter 03 Demo</p>
-            <h1>Subtitle Plugin and Microphone Sandbox</h1>
+            <p className="eyebrow">Chapter 04 Demo</p>
+            <h1>Subtitle, Microphone, and OpenAI Session Sandbox</h1>
             <p className="supporting-text">
-              This repo still uses a fake subtitle provider. The new microphone
-              sandbox only proves local browser audio capture and does not send
-              audio to OpenAI or any backend.
+              This repo still uses a fake subtitle provider. The new backend
+              smoke test only creates short-lived OpenAI translation session
+              secrets and still does not send audio to OpenAI or start WebRTC.
             </p>
           </div>
 
@@ -74,8 +75,9 @@ function DemoScreen({
               the detachable overlay later.
             </p>
             <p className="slide-note">
-              Subtitle behavior and microphone capture now share the same demo
-              page, but they remain separate modules on purpose.
+              Subtitle behavior, microphone capture, and the OpenAI session
+              smoke test now share the same demo page, but they remain separate
+              modules on purpose.
             </p>
             <div className="slide-meta">
               <div>
@@ -250,6 +252,7 @@ function DemoScreen({
           </section>
 
           <AudioInputPanel />
+          <OpenAITranslationSessionPanel />
         </div>
       </main>
 
